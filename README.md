@@ -3,7 +3,7 @@
 ## API 명세
 
 ### **사용자(User) API**
-
+    
 **베이스 경로**: `/api/users`
 
 | 기능               | HTTP Method | 엔드포인트                         | 요청                                                                                                                | 응답                                                                   |

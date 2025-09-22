@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar(project)" class="bg-light border-end" id="sidebar-wrapper">
+    <div class="sidebar-heading border-bottom bg-light">
+        <a th:href="${project != null} ? @{/projects/{id}/rag(id=${project.id})} : @{/projects}"
+           class="text-decoration-none text-dark fw-bold"
+           th:text="${project != null} ? ${project.name} : 'Triton MSA'">
+            Triton MSA
+        </a>
+    </div>
+    <div class="list-group list-group-flush">
+        <div th:if="${project != null}">
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/rag(id=${project.id})}">
+                <i class="bi bi-diagram-3 me-2"></i>서비스 배포 관리
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{projectId}/rag/history(projectId=${project.id})}">
+                <i class="bi bi-clock-history me-2"></i>채팅 이력 조회
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}">
+                <i class="bi bi-arrow-repeat me-2"></i>로그 수집기 다운로드
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{id}/private-data(id=${project.id})}">
+                <i class="bi bi-shield-lock me-2"></i>조직 내부 데이터 관리
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects/{projectId}/monitoring(projectId=${project.id})}">
+                <i class="bi bi-display me-2"></i>서비스 모니터링
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/ssh/connect/{projectId}(projectId=${project.id})}">
+                <i class="bi bi-diagram-2 me-2"></i>서비스 원격 접속
+            </a>
+            <hr class="my-2"/>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects}">
+                <i class="bi bi-list-ul me-2"></i>프로젝트 목록으로
+            </a>
+        </div>
+
+        <div th:unless="${project != null}">
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/projects}">
+                <i class="bi bi-collection me-2"></i>프로젝트 목록
+            </a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+               th:href="@{/profile}">
+                <i class="bi bi-person-circle me-2"></i>프로필
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

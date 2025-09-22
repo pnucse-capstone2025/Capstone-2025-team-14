@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${project.name} + ' - Deployment Management'">Deployment Management</title>
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="/js/markdownRenderer.js"></script>
+</head>
+
+<body>
+<section layout:fragment="page-content">
+    <div class="container-fluid p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800" th:text="${project.name}">Project Name</h1>
+                <p class="text-muted mb-0">AI RAG Chat</p>
+            </div>
+            <a th:href="@{/projects/{id}/deploy/download-config(id=${project.id})}" class="btn btn-outline-primary rounded-pill">
+                <i class="bi bi-download me-2"></i>Log Deployer
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="row gx-0">
+                    <div class="col-lg-2 border-end">
+                        <div class="p-3">
+                            <h6 class="text-muted text-uppercase small mb-3">
+                                <i class="bi bi-sliders me-2"></i>AI 설정
+                            </h6>
+                            <form id="chat-settings">
+                                <div class="mb-3">
+                                    <label for="provider" class="form-label small fw-bold">Provider</label>
+                                    <select class="form-select" id="provider" name="provider">
+                                        <option value="openai" selected>OpenAI</option>
+                                        <option value="anthropic">Anthropic</option>
+                                        <option value="gemini">Google Gemini</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="model" class="form-label small fw-bold">Model</label>
+                                    <select class="form-select" id="model" name="model"></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="queryType" class="form-label small fw-bold">Query Type</label>
+                                    <select class="form-select" id="queryType" name="queryType">
+                                        <option value="msa_k8s">MSA/k8s 질의응답</option>
+                                        <option value="yaml_generation">배포명세 YAML 생성</option>
+                                        <option value="yaml_edit">배포명세 YAML 수정</option>
+                                        <option value="log_analyze">로그 분석</option>
+                                        <option value="resource_setting">리소스 분석</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-10 d-flex flex-column">
+                        <div id="chat-window" class="p-4" style="height: 65vh; overflow-y: auto;">
+                        </div>
+
+                        <div class="mt-auto p-3 border-top bg-light-subtle">
+                            <form id="chat-form">
+                                <div class="d-flex gap-2">
+                                    <label for="file" class="btn btn-outline-secondary mb-0 flex-shrink-0">
+                                        <i class="bi bi-paperclip"></i>
+                                    </label>
+                                    <input class="form-control d-none" type="file" id="file" name="file">
+
+                                    <div class="input-group">
+                                        <input type="text" id="query" name="query" class="form-control"
+                                               placeholder="AI에게 질문을 입력하세요..." required>
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="bi bi-send-fill"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 ms-1">
+                                    <small id="file-name-display" class="text-muted"></small>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<th:block layout:fragment="page-scripts">
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const projectId = /*[[${project.id}]]*/ 0;
+            const chatWindow = document.getElementById("chat-window");
+            const chatForm = document.getElementById("chat-form");
+
+            const queryInput = document.getElementById("query");
+            const providerSelect = document.getElementById("provider");
+            const modelSelect = document.getElementById("model");
+            const queryTypeSelect = document.getElementById("queryType");
+            const fileInput = document.getElementById("file");
+            const fileNameDisplay = document.getElementById('file-name-display');
+
+            // --- 파일 입력 변경 감지 이벤트 리스너 ---
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    // 파일이 선택되면 이름 표시
+                    fileNameDisplay.textContent = `첨부: ${fileInput.files[0].name}`;
+                } else {
+                    // 선택이 취소되면 텍스트 지우기
+                    fileNameDisplay.textContent = "";
+                }
+            });
+
+            const modelOptions = {
+                openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+                anthropic: ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+                gemini: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
+            };
+
+            function updateModelOptions() {
+                const selectedProvider = providerSelect.value;
+                modelSelect.innerHTML = "";
+                modelOptions[selectedProvider].forEach(modelName => {
+                    const option = document.createElement("option");
+                    option.value = modelName;
+                    option.textContent = modelName;
+                    modelSelect.appendChild(option);
+                });
+            }
+
+            providerSelect.addEventListener("change", updateModelOptions);
+            updateModelOptions();
+
+            function appendUserMessage(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('d-flex', 'justify-content-end', 'mb-2');
+                const bubbleDiv = document.createElement('div');
+                bubbleDiv.classList.add('chat-bubble-user');
+                bubbleDiv.textContent = message;
+                messageDiv.appendChild(bubbleDiv);
+                chatWindow.appendChild(messageDiv);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function appendAIResponsePlaceholder() {
+                const wrapper = document.createElement("div");
+                wrapper.classList.add("d-flex", "justify-content-start", "mb-2");
+                wrapper.innerHTML = `
+                    <div class="chat-bubble-ai">
+                        <div class="llm-response">
+                            <div class="typing-indicator">응답 생성 중...</div>
+                        </div>
+                    </div>
+                `;
+                chatWindow.appendChild(wrapper);
+                return wrapper.querySelector(".llm-response");
+            }
+
+            async function renderStreamingResponse(formData) {
+                const responsePlaceholder = appendAIResponsePlaceholder();
+                const loadingIndicator = responsePlaceholder.querySelector(".typing-indicator");
+                let accumulatedText = "";
+
+                const render = (text) => {
+                    accumulatedText += text;
+                    renderMarkdownToElement(responsePlaceholder, accumulatedText);
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                };
+
+                try {
+                    const response = await fetch(`/projects/${projectId}/rag/stream`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: "알 수 없는 서버 오류" }));
+                        throw new Error(errorData.error || `HTTP 오류! 상태: ${response.status}`);
+                    }
+                    if (loadingIndicator) loadingIndicator.remove();
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let buffer = "";
+
+                    // SSE 이벤트 블록(빈 줄 \n\n 로 종료) 처리
+                    const flushEventBlock = (block) => {
+                        // 줄 단위 파싱: 들여쓰기는 그대로 유지
+                        const lines = block.split(/\r?\n/);
+                        const dataLines = [];
+
+                        for (const line of lines) {
+                            if (line.startsWith("data:")) {
+                                // 접두사만 제거, 내용(들여쓰기 포함) 보존
+                                dataLines.push(line.replace(/^data:\s?/, ""));
+                            }
+                        }
+
+                        // 줄 사이에만 개행을 넣고, 마지막엔 개행을 넣지 않음 → 이중 줄바꿈 방지
+                        if (dataLines.length) {
+                            render(dataLines.join("\n"));
+                        }
+                    };
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+
+                        let boundary;
+                        while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+                            const eventBlock = buffer.slice(0, boundary);
+                            buffer = buffer.slice(boundary + 2);
+                            if (eventBlock.trim().length > 0) {
+                                flushEventBlock(eventBlock);
+                            }
+                        }
+                    }
+
+                    // 마지막에 \n\n 없이 종료될 수 있으므로 잔여 버퍼 처리
+                    if (buffer.trim().length > 0) {
+                        flushEventBlock(buffer);
+                    }
+
+                } catch (error) {
+                    console.error("스트리밍 응답 오류:", error.message);
+                    const errorMessage = `⚠️ ${error.message}`;
+                    if (loadingIndicator) loadingIndicator.textContent = errorMessage;
+                    else responsePlaceholder.textContent = errorMessage;
+                } finally {
+                    fileInput.value = "";
+                }
+            }
+
+            chatForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const query = queryInput.value.trim();
+                if (!query) return;
+
+                appendUserMessage(query);
+                queryInput.value = "";
+                fileNameDisplay.textContent = "";
+
+                const requestDto = {
+                    query: query,
+                    provider: providerSelect.value,
+                    model: modelSelect.value,
+                    query_type: queryTypeSelect.value
+                };
+
+                const formData = new FormData();
+                formData.append('requestDto', new Blob([JSON.stringify(requestDto)], { type: 'application/json' }));
+
+                if (fileInput.files.length > 0) {
+                    formData.append('file', fileInput.files[0]);
+                }
+
+                renderStreamingResponse(formData);
+                fileInput.value = "";
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

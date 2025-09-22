@@ -1,0 +1,8 @@
+elasticsearch==8.9.0
+Flask==3.1.1
+langchain==0.3.27
+langchain_community==0.3.27
+langchain_google_genai==2.1.9
+langchain_openai==0.3.30
+pydantic_settings==2.10.1
+python-dotenv==1.1.1

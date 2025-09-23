@@ -1,149 +1,118 @@
-# RAG Microservice Management
+### 1. 프로젝트 배경
+#### 1.1. 국내외 시장 현황 및 문제점
+최근 IT 시장의 중심에는 대규모 언어 모델(LLM)이 자리 잡고 있습니다. 2025년 조사에 따르면, 전 세계 기업의 약 67%가 이미 LLM을 업무에 도입했으며, 72%의 기업이 향후 LLM 관련 지출을 확대할 계획이라고 합니다. 이러한 흐름 속에서 마이크로서비스 아키텍처(MSA)는 시스템을 독립적인 기능 단위로 분리하여 유연하고 확장 가능한 애플리케이션을 구축하는 표준으로 자리 잡았습니다.
 
-## API 명세
+하지만 MSA 환경을 컨테이너 기반(예: Kubernetes)으로 운영하는 데에는 다음과 같은 문제점들이 존재합니다.
 
-### **사용자(User) API**
-    
-**베이스 경로**: `/api/users`
+- **조직 내부 데이터를 반영한 배포 명세 생성의 어려움** : MSA 배포 명세에는 조직의 고유한 정책, 서비스 간 의존성, 보안 설정 등 내부 데이터가 정확히 반영되어야 합니다. 하지만 이 데이터는 외부 도구에서 접근하기 어렵고, 프로젝트 상황에 따라 계속 변경되기 때문에 배포 담당자가 모든 정보를 숙지하기 어렵습니다.
 
-| 기능               | HTTP Method | 엔드포인트                         | 요청                                                                                                                | 응답                                                                   |
-| :--------------- | :---------: | :---------------------------- | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
-| 일반 회원가입          |    `POST`   | `/register`                   | Body: `{ "username": "newUser", "password": "password123", "api_keys": { "OPENAI": "sk-...", "GEMINI": "..." } }` | **201 Created** Body: `{ "id": 1, "username": "newUser" }`           |
-| 로그인              |    `POST`   | `/login`                      | Body: `{ "username": "testuser", "password": "password123" }`                                                     | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
-| 토큰 재발급           |    `POST`   | `/refresh`                    | Body: `{ "refresh_token": "eyJhbGciOiJI..." }`                                                                    | **200 OK** Body: `{ "access_token": "...", "refresh_token": "..." }` |
-| LLM API 키 유효성 검사 |    `POST`   | `/validate-api-key`           | Body: `{ "provider": "OPENAI", "api_key": "sk-..." }`                                                             | **200 OK** Body: `"valid"`                                           |
-| LLM API 키 조회  |    `GET`    | `/me/api-key?provider=OPENAI` | Query: `provider` (예: OPENAI, GEMINI, CLAUDE)                                                                     | **200 OK** Body: `{ "openai": "sk-..." }`                            |
-| 회원 탈퇴            |   `DELETE`  | `/me`                         | Body: `{ "password": "password123" }`                                                                             | **204 No Content**                                                   |
-| 비밀번호 변경          |   `PATCH`   | `/me/password`                | Body: `{ "curr_password": "current_password", "new_password": "new_strong_password" }`                            | **204 No Content**                                                   |
-| LLM API 키 변경     |   `PATCH`   | `/me/api-key`                 | Body: `{ "provider": "OPENAI", "new_api_key": "sk-newkey..." }`                                                   | **204 No Content**                                                   |
----
+- **LLM을 활용한 기존 접근 방법의 한계로 인한 문제** : 기존의 LLM을 활용한 접근 방식인 Fine-tuning은 특정 도메인에 특화된 모델을 이용할 수 있다는 장점이 있지만, 새 데이터마다 재학습이 필요해 시간, 비용 부담과 반영 지연이 발생합니다. 또한 생성된 답변의 출처를 제시하지 못하기 때문에 신뢰성이 중요한 배포 명세 작성 지원에 적합하지 않습니다.
 
-### **프로젝트(Project) API**
-**베이스 경로**: `/api/projects`
+- **오류 로그 및 리소스 사용량을 반영한 배포 명세 개선 기능 부재** : 기존 시스템들(예: Prometheus, Grafana 등)은 대부분 리소스 상태 진단 기능은 제공하지만, 운영 중 수집되는 마이크로서비스의 에러 로그와 같은 운영 정보나 CPU/메모리 사용량 등의 리소스 메트릭을 반영하여 배포 명세의 구체적인 개선 방법을 제공하는 기능은 제공하지 않습니다.
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 내 프로젝트 목록 조회 | `GET` | `/` | (없음) | **200 OK** Body: `json [  {    "id": 1,    "name": "Project A",    "ssh_ip_address": "192.168.1.100",    "created_at": "2025-08-17T10:30:00"  }]` |
-| 프로젝트 생성 | `POST` | `/` | ```json {  "name": "My New Project", "ssh_info": {    "ssh_ip_address": "192.168.1.10",    "username": "ubuntu",    "pem_file": null  }}``` | **201 Created** |
+#### 1.2. 필요성과 기대효과
+> 왜 이 프로젝트가 필요한지, 기대되는 효과 등
 
----
+### 2. 개발 목표
+#### 2.1. 목표 및 세부 내용
+> **전체적인 개발 목표** 
+- 배포 명세 작성을 위한 조직 내부 데이터의 정의와 분류 기준 제시 
+- RAG 기반 배포 명세 생성·수정 기능을 제공하는 MSA 운영 지원 시스템 구축 
+- 컨테이너 에러 로그 및 리소스 메트릭 수집을 통한 배포 명세 동적 개선 방안 제시 및 기술 구현 
 
-### **프라이빗 데이터(Private Data) API**
-**베이스 경로**: `/api/projects/{projectId}/private-data`
+> 주요 기능 및 기획 내용
+- **조직 계정 및 프로젝트 관리**: JWT 기반의 안전한 사용자 인증 및 MSA 애플리케이션 단위의 프로젝트 생성, 원격 접속, 관리 기능.
+- **조직 내부 데이터 관리**: 조직의 정책, MSA 정의 문서 등을 업로드하면 자동으로 텍스트를 추출하고 벡터 임베딩하여 Elasticsearch에 저장하는 기능.
+- **RAG 기반 배포 지원**: 사용자의 자연어 질의를 분석하고, Elasticsearch에 저장된 내부 데이터를 검색하여 컨텍스트를 구성한 뒤, LLM을 통해 배포 명세를 생성하거나 오류를 수정하는 기능.
+- **서비스 운영 모니터링**: 로그 수집기(Filebeat, Metricbeat 등)를 사용자 환경에 쉽게 배포하고, 수집된 에러 로그와 리소스 메트릭을 주기적으로 분석하여 배포 명세 개선안을 생성 및 제공하는 기능.
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 프라이빗 데이터 목록 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `[{ "id": 1, "project_id": 1, "filename": "doc.txt", "content_type": "text/plain", "created_at": "..." }]` |
-| ZIP 업로드 & 저장 | `POST` | `/upload` | **Path**: `projectId` **Form-Data**: `file` | **200 OK** Body: `{ "message": "...", "saved_filenames": [{ "filename": "a.txt", "reason": "OK" }], "skipped_filenames": [] }` |
-| 프라이빗 데이터 삭제 | `DELETE` | `/{id}` | **Path**: `projectId`, `id` | **204 No Content** |
+#### 2.2. 기존 서비스 대비 차별성 
+| 평가 기준 | 제안 시스템 | 기존 접근법 (파인튜닝) |
+| :--- | :--- | :--- |
+| **최신 데이터 반영 수준** | 높음 (문서 추가/수정만으로 즉시 반영 가능) | 고정적 (전체 모델 재학습 필요) |
+| **데이터 처리 및 운영 효율성** | 높음 (벡터 임베딩만 재수행하여 비용 및 시간 효율적) | 낮음 (재학습에 막대한 시간과 컴퓨팅 자원 소요) |
+| **근거 추적 가능성** | 가능 (답변 생성에 참조한 실제 문서를 제시하여 신뢰성 확보) | 불가능 (지식이 모델 파라미터에 내재화되어 근거 추적 불가) |
 
----
+또한, 기존 모니터링 도구가 단순히 보여주는 것에 그쳤다면, 본 시스템은 수집된 데이터를 바탕으로 조직 정책을 해석하여 배포 명세를 능동적으로 개선 및 제안한다는 점에서 차별화됩니다.
 
-### **RAG API**
-**베이스 경로**: `/api/projects/{projectId}/rag`
+#### 2.3. 사회적 가치 도입 계획 
+- **기술 장벽 완화**: 복잡한 MSA 및 Kubernetes 운영에 대한 기술적 장벽을 낮춤으로써, 소규모 팀이나 학생, 신입 개발자도 표준화된 방식으로 안정적인 인프라를 운영할 수 있도록 지원합니다.
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 채팅 페이지 데이터 조회 | `GET` | `/` | **Path**: `projectId` | **200 OK** Body: `{ "project": {    "id": 1,    "name": "Project A",    "ssh_ip_address": "192.168.1.100",    "created_at": "2025-08-17T10:30:00"  }, "history": [{ "id": 1, "user_query": "...", "llm_response": "...", "created_at": "..." }] }` |
-| 채팅 스트림(SSE) | `GET` | `/stream` | **Path**: `projectId` **Query**: `query` | **200 OK** `text/event-stream` Body: `{ "user_query": "...", "response": "..." }` 스트림 |
+### 3. 시스템 설계
+#### 3.1. 시스템 구성도
+> 이미지 혹은 텍스트로 시스템 아키텍쳐 작성
+>
+#### 3.2. 사용 기술
+| 구분 | 기술 스택 |
+| :--- | :--- |
+| **소프트웨어 형상관리 (SCM)** | Github |
+| **컨테이너 오케스트레이션** | Docker, Kubernetes |
+| **Back-end** | Spring Boot, Flask |
+| **Front-end** | HTML, CSS, JavaScript, Thymeleaf |
+| **RAG** | LangChain |
+| **로그 수집** | Elasticsearch, Logstash, Filebeat, Metricbeat |
 
----
+### 4. 개발 결과
+#### 4.1. 전체 시스템 흐름도
+사용자는 시스템에 로그인하여 프로젝트를 생성하고, 해당 프로젝트에 조직 내부 데이터를 업로드하는 것으로 시작합니다. 업로드된 문서는 Flask 서버에 의해 벡터화되어 Elasticsearch에 저장됩니다. 그 후 사용자는 채팅 인터페이스를 통해 자연어로 배포 명세 생성을 요청할 수 있습니다.
 
-### **RAG 히스토리 API**
-**베이스 경로**: `/api/projects/{projectId}/rag/history`
+**RAG 기반 배포 명세 생성 흐름**:
+1. **사용자 질의 입력**: 사용자가 배포하고자 하는 MSA의 기능 흐름과 서비스 목록을 포함하여(예시 넣으면 좋을 듯) 자연어로 요청합니다.
+2. **유사도 검색 (Retrieve)**: 시스템은 사용자 질의를 임베딩하여 Elasticsearch에 저장된 문서 벡터 중 가장 관련성 높은 문서 청크(컨텍스트)를 검색합니다.
+3. **프롬프트 구성 (Augment)**: 검색된 컨텍스트와 원본 사용자 질의, 그리고 사전에 정의된 프롬프트 템플릿을 조합하여 LLM에게 전달할 최종 프롬프트를 구성합니다.
+4. **생성 (Generate)**: 최종 프롬프트를 외부 LLM에 전달하여, 조직 내부 데이터가 완벽히 반영된 Kubernetes YAML 형식의 최종 답변을 생성합니다. 생성된 내용은 사용자에게 표시되고, 시스템 DB에 이력으로 저장됩니다.
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 / JSON                                                                                                                         | 응답                                                                                                                             |
-| :--------- | :---------: | :------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| 히스토리 목록 조회 |    `GET`    | `/`            | **Path**: `projectId`                                                                                                                  | **200 OK** Body:<br>`[{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }]` |
-| 히스토리 단건 조회 |    `GET`    | `/{historyId}` | **Path**: `projectId`, `historyId`                                                                                                     | **200 OK** Body:<br>`{ "id": 1, "title": "content_title", "user_query": "...", "llm_response": "...", "created_at": "..." }`   |
-| 히스토리 저장 |    `POST`   | `/`            | **Path**: `projectId`<br>**Body JSON**:<br>`json { "title": "content_title", "user_query": "사용자 질문", "llm_response": "프론트에서 생성된 답변" }` | **201 Created** Body:<br>`{ "id": 123 }`                                                                                       |
-| 히스토리 삭제 |   `DELETE`  | `/{historyId}` | **Path**: `projectId`, `historyId`                                                                                                     | **204 No Content**                                                                                                             |
+#### 4.2. 기능 설명 및 주요 기능 명세서
+**RAG 기반 MSA 애플리케이션 배포 지원**
+- **설명**: 시스템의 핵심 기능으로, 사용자가 자연어로 서비스 구성에 대해 설명하면 조직 내부 데이터를 근거로 Kubernetes 배포 명세(YAML)를 생성합니다. 필수 필드 누락이나 운영 정책 위반 등의 오류가 포함된 기존 명세를 업로드하고 수정을 요청할 수도 있습니다.
 
+- **입력**: 사용자 자연어 질의, (선택) 기존 배포 명세 파일.
 
----
+- **출력**: 주석이 포함된 Kubernetes YAML 배포 명세, 생성 근거가 된 조직 내부 데이터 출처.
 
-### **SSH 연결 API**
-**베이스 경로**: `/api/ssh`
+**서비스 운영 모니터링 및 동적 개선**
+- **설명**: 사용자의 MSA 환경에 로그 수집기(Filebeat, Metricbeat 등) 배포 파일을 제공합니다. 수집된 에러 로그나 리소스 메트릭(CPU, 메모리 사용량)을 주기적으로 분석하고, 이를 조직 내부 정책(예: 리소스 할당 기준, 주요 에러 해결 방안)과 비교하여 최적화된 배포 명세 개선안을 생성하여 사용자에게 제안합니다.
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 파라미터 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 프로젝트 SSH 세션 생성 | `POST` | `/connect/{projectId}` | **Path**: `projectId` | **200 OK** Body: `{ "sessionId": "..." }` |
+- **입력**: Elasticsearch에 수집된 에러 로그 및 리소스 메트릭, 사용자가 업로드한 기존 배포 명세.
 
----
+- **출력**: 리소스 할당량 조정 등이 반영된 배포 명세 개선안 YAML 파일.
 
-### **배포(Deploy) API**
-**베이스 경로**: `/api/projects/{projectId}/deploy`
+#### 4.3. 디렉토리 구조
+    .
+    ├── spring-server  # 스프링 부트 메인 서버
+    │   ├── src
+    │   │   ├── main
+    │   │   │   ├── java
+    │   │   │   └── resources
+    │   │   │       ├── static
+    │   │   │       ├── templates
+    │   │   │       └── application.yml
+    │   └── pom.xml
+    ├── flask-server   # Flask RAG 서버
+    │   ├── app.py
+    │   ├── requirements.txt
+    │   └── venv
+    ├── docs           # 프로젝트 문서
+    └── docker-compose.yml # Elasticsearch 등 실행 환경 구성
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 설정 파일 다운로드 | `POST` | `/download-config` | ```json{  "namespace": "logging",  "logstash_port": 5044}``` | **200 OK** Body: ZIP 파일 |
+#### 4.4. 산업체 멘토링 의견 및 반영 사항
+> 멘토 피드백과 적용한 사례 정리
 
-### **모니터링(Monitoring) API**
+### 5. 설치 및 실행 방법
+>
+#### 5.1. 설치절차 및 실행 방법
+> 설치 명령어 및 준비 사항, 실행 명령어, 포트 정보 등
+#### 5.2. 오류 발생 시 해결 방법
+> 선택 사항, 자주 발생하는 오류 및 해결책 등
 
-**베이스 경로**: `/api/projects/{projectId}/monitoring`
+### 6. 소개 자료 및 시연 영상
+#### 6.1. 프로젝트 소개 자료
+> PPT 등
+#### 6.2. 시연 영상
+> 영상 링크 또는 주요 장면 설명
 
-| 기능 | HTTP Method | 엔드포인트 | 요청 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 로그 분석 모델 조회 | `GET` | `/endpoint` | **Path**: `projectId` | **200 OK** Body: `{ "provider": "OPENAI", "model": "GPT_4" }` |
-| 로그 분석 모델 수정 | `PUT` | `/endpoint` | **Path**: `projectId`\<br\>**Body**: `{ "provider": "GOOGLE", "model": "GEMINI_PRO" }` | **204 No Content** |
-| 모니터링 이력 조회 | `GET` | `/` | **Path**: `projectId`\<br\>**Query**: `page`, `size`, `sort` | **200 OK** Body: (페이지네이션된 MonitoringHistoryResponseDto 목록) |
-| 모니터링 이력 삭제 | `DELETE` | `/{monitoringHistoryId}` | **Path**: `projectId`, `monitoringHistoryId` | **204 No Content** |
+### 7. 팀 구성
+#### 7.1. 팀원별 소개 및 역할 분담
+>
 
-
-### **RAG 서버 로그 분석 요청 API 형태**
-
-**베이스 경로**: (RAG 서버 주소)
-
-| 기능 | HTTP Method | 엔드포인트 | 요청 JSON 예시 | 응답 |
-| :--- | :---: | :--- | :--- | :--- |
-| 로그 분석 및 리포트 생성 | `POST` | `/api/get-rag-response` | **Body**:`json { "es_index": "project-1-logs-*", "provider": "OPENAI", "model": "GPT_4", "query": "분석할 로그 프롬프트..." }` | **200 OK** **Body**:`json { "title": "로그 분석 리포트 제목", "llm_response": "LLM이 생성한 분석 결과..." }` |
-
-## RAG server 구동 방법
-
-### 1. .env에 API_KEY 입력
-`OPENAI_API_KEY = "YOUR API KEY"`
-
-### 2. python 가상환경 생성
-`python -m venv ./<venv>`
-
-### 3. 가상환경 activate
-
-<table>
-  <tr>
-    <td>Platform</td>
-    <td>Shell</td>
-    <td>Command to activate virtual environment</td>
-  </tr>
-  <tr>
-    <th rowspan="4">POSIX</th>
-    <td>bash/zsh</td>
-    <td><code>$ source <venv>/bin/activate</code></td>
-  </tr>
-  <tr>
-    <td>fish</td>
-    <td><code>$ source <venv>/bin/activate.fish</code></td>
-  </tr>
-  <tr>
-    <td>csh/tcsh</td>
-    <td><code>$ source <venv>/bin/activate.csh</code></td>
-  </tr>
-  <tr>
-    <td>pwsh</td>
-    <td><code>$ <venv>/bin/Activate.ps1</code></td>
-  </tr>
-  <tr>
-    <th rowspan="2">Windows</th>
-    <td>cmd.exe</td>
-    <td><code>C:\> <venv>\Scripts\activate.bat</code></td>
-  </tr>
-  <tr>
-    <td>PwerShell</td>
-    <td><code>PS C:\> <venv>\Scripts\Activate.ps1</code></td>
-  </tr>
-</table>
-
-### 4. requirements 설치
-`pip install -r requirements.txt`
-
-### 5. Run Server
-`python main.py`
+### 8. 참고 문헌 및 출처

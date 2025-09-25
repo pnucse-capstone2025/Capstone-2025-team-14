@@ -55,36 +55,30 @@ config:
   theme: neutral
   layout: dagre
 ---
-
 graph TD%%{init: {'themeVariables': { 'fontSize': '24px' }}}%%
     subgraph "<b>조직 내부 데이터 (Input)</b>"
-        A["<b>애플리케이션 정보</b><br/>- 서비스 이름<br>- 포트<br>- 서비스 의존성"]
-        B["<b>마이크로서비스<br>정보</b><br/>- 이미지<br>- 환경변수<br>- 인스턴스 수"]
-        C["<b>내부 운영 정책</b><br/>- 리소스 할당<br>- 레이블 규칙<br>- 보안 정책 "<br>- 주요 에러 및<br>대응]
+        A["<b>애플리케이션 정보</b><br/>- 서비스 이름<br/>- 포트<br/>- 서비스 의존성"]
+        B["<b>마이크로서비스<br>정보</b><br/>- 이미지<br/>- 환경변수<br/>- 인스턴스 수"]
+        C["<b>내부 운영 정책</b><br/>- 리소스 할당<br/>- 레이블 규칙<br/>- 보안 정책 <br/>- 주요 에러 및<br>대응"]
     end
 
     Generator((<b>RAG<br/>매핑</b>))
 
-    subgraph "<b>배포 명세</b>"
-        entry_point(" ")
-        style entry_point fill:none,stroke:none
-
+    subgraph "<b>배포 명세 (Output)</b>"
         D["<b>Service</b><br/>(metadata, spec)"]
         E["<b>Deployment</b><br/>(metadata, spec)"]
         F["<b>ConfigMap/Secret</b><br/>(data)"]
-        
-        entry_point -- "Service<br>리소스 생성" --> D
-        entry_point -- "Deployment<br>리소스 생성" --> E
-        entry_point -- "ConfigMap/Secret<br/>리소스 생성" --> F
     end
 
-    A -- "전체 구조 및<br>연결 정보" --> Generator
-    B -- "개별 서비스 실행 환경 정보" --> Generator
-    C -- "공통 운영/보안<br>정책" --> Generator
+    A -- "애플리케이션 구조" --> Generator
+    B -- "서비스 실행 환경" --> Generator
+    C -- "공통 운영 정책" --> Generator
     
-    Generator -- "<b>K8s 리소스 필드로 매핑</b>" --> entry_point
+    Generator -- "Service<br>리소스 생성" --> D
+    Generator -- "Deployment<br>리소스 생성" --> E
+    Generator -- "ConfigMap/Secret<br>리소스 생성" --> F
 
-    %% Style Definitions    
+    %% Style Definitions
     %% Inputs: Blue Theme
     style A fill:#EBF5FB,stroke:#3498DB,stroke-width:2px
     style B fill:#EBF5FB,stroke:#3498DB,stroke-width:2px
@@ -97,7 +91,6 @@ graph TD%%{init: {'themeVariables': { 'fontSize': '24px' }}}%%
     style D fill:#E8F8F5,stroke:#27AE60,stroke-width:2px
     style E fill:#E8F8F5,stroke:#27AE60,stroke-width:2px
     style F fill:#E8F8F5,stroke:#27AE60,stroke-width:2px
-
 ```
 
 - RAG 기반 운영 개선 구조도
@@ -319,14 +312,12 @@ flowchart LR
 > PPT 등
 #### 6.2. 시연 영상
 > 영상 링크 또는 주요 장면 설명
-이거는 내용 다 겹치니까 영상 하나만 넣자 
-시연영상?
-그 10분짜리 영상 ㅇㅇ
+
 ### 7. 팀 구성
 #### 7.1. 팀원별 소개 및 역할 분담
 - 김휘수, whisu20000@pusan.ac.kr
--  
--  
+  -  
+  -  
 - 신세환, sk124590@gmail.com 
   - 실시간 웹 터미널 구현
   - 로그 수집기 배포 기능 개발

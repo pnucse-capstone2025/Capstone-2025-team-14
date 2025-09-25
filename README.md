@@ -262,7 +262,7 @@ flowchart LR
 
 #### 4.3. 디렉토리 구조
     .
-    ├── triton_dashboard  # 스프링 부트 메인 서버
+    ├── triton_dashboard  # Spring Boot 메인 서버
     │   ├── src
     │   │   ├── main
     │   │   │   ├── java

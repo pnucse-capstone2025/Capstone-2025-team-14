@@ -12,21 +12,19 @@
 - **오류 로그 및 리소스 사용량을 반영한 배포 명세 개선 기능 부재** : 기존 시스템들(예: Prometheus, Grafana 등)은 대부분 리소스 상태 진단 기능은 제공하지만, 운영 중 수집되는 마이크로서비스의 에러 로그와 같은 운영 정보나 CPU/메모리 사용량 등의 리소스 메트릭을 반영하여 배포 명세의 구체적인 개선 방법을 제공하는 기능은 제공하지 않습니다.
 
 #### 1.2. 필요성과 기대효과
-> 왜 이 프로젝트가 필요한지, 기대되는 효과 등
-
- RAG(Retrieval-Augmented Generation) 기술을 활용해서 컨테이너 기반 마이크로서비스의 운영 환경 관리 지원 시스템을 구축함으로써, 기존의 문제점을 해결하고 다음과 같은 기대 효과를 얻을 수 있습니다.
+RAG(Retrieval-Augmented Generation) 기술을 활용해서 컨테이너 기반 마이크로서비스의 운영 환경 관리 지원 시스템을 구축함으로써, 기존의 문제점을 해결하고 다음과 같은 기대 효과를 얻을 수 있습니다.
 
 - **배포 정확도 및 효율성 향상** : 사용자 요구사항에 맞는 조직 내부 데이터를 반영해서 정확하고 일관된 배포 명세를 생성함으로써, 수작업으로 인한 오류를 줄이고 배포 준비 시간을 단축합니다.
 - **운영 환경 안정성 확보** : 운영 환경에서 수집된 로그와 리소스 메트릭을 조직 내부 데이터를 기반으로 배포 명세 개선안을 제안함으로써, 서비스의 안정성을 높이고 인프라 자원의 낭비를 줄일 수 있습니다.
 
 ### 2. 개발 목표
 #### 2.1. 목표 및 세부 내용
-> **전체적인 개발 목표** 
+> 목표 
 - 배포 명세 작성을 위한 조직 내부 데이터의 정의와 분류 기준 제시 
 - RAG 기반 배포 명세 생성·수정 기능을 제공하는 MSA 운영 지원 시스템 구축 
 - 컨테이너 에러 로그 및 리소스 메트릭 수집을 통한 배포 명세 동적 개선 방안 제시 및 기술 구현 
 
-> 주요 기능 및 기획 내용
+> 세부 구현 내용
 - **조직 계정 및 프로젝트 관리**: JWT 기반의 안전한 사용자 인증 및 MSA 애플리케이션 단위의 프로젝트 생성, 원격 접속, 관리 기능.
 - **조직 내부 데이터 관리**: 조직의 정책, MSA 정의 문서 등을 업로드하면 자동으로 텍스트를 추출하고 벡터 임베딩하여 Elasticsearch에 저장하는 기능.
 - **RAG 기반 배포 지원**: 사용자의 자연어 질의를 분석하고, Elasticsearch에 저장된 내부 데이터를 검색하여 컨텍스트를 구성한 뒤, LLM을 통해 배포 명세를 생성하거나 오류를 수정하는 기능.
@@ -311,7 +309,9 @@ flowchart LR
 
 ### 6. 소개 자료 및 시연 영상
 #### 6.1. 프로젝트 소개 자료
-> PPT 등
+
+[발표자료 (PDF)](/docs/02.포스터/2025포스터_14_트리톤.pdf)
+
 #### 6.2. 시연 영상
 > 영상 링크 또는 주요 장면 설명
 
@@ -334,3 +334,17 @@ flowchart LR
 
 ### 8. 참고 문헌 및 출처
 
+1. J. Lewis and M. Fowler, (2014). Microservices [Online]. Available: https://martinfowler.com/articles/microservices.html (downloaded 2025, Sep. 17)
+2. Microsoft, (2025). Microservices architectural style [Online]. Available: https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices (downloaded 2025, Sep. 19)
+3. Hostinger, (2025). LLM statistics 2025: Comprehensive insights into market trends and integration [Online]. Available: https://www.hostinger.com/tutorials/llm-statistics (downloaded 2025, Sep. 17)
+4. P. Lewis, E. Perez, A. Piktus, F. Petroni, V. Karpukhin, N. Goyal, H. Küttler, M. Lewis, W. Yih, T. Rocktäschel, S. Riedel, and D. Kiela, "Retrieval-augmented generation for knowledge-intensive NLP tasks," Advances in Neural Information Processing Systems, Vol. 33, pp. 9459-9474, 2020.
+5. Y. Gao, Y. Xiong, X. Gao, K. Jia, J. Pan, Y. Bi, Y. Dai, J. Sun, and H. Wang, "Retrieval-Augmented Generation for Large Language Models: A Survey," arXiv preprint arXiv:2312.10997, 2023.
+6. Atlassian, (2023). DORA Metrics: How to Measure DevOps Performance [Online]. Available: https://www.atlassian.com/devops/frameworks/dora-metrics (downloaded 2025, Sep. 17)
+7. D. Merkel, "Docker: lightweight linux containers for consistent development and deployment," Linux journal, Vol. 2014, No. 239, p. 2, 2014.
+8. A. Verma, L. Pedrosa, M. R. Korupolu, D. Oppenheimer, E. Tune, and J. Wilkes, "Large-scale cluster management at Google with Borg," Proc. of the Tenth European Conference on Computer Systems (EuroSys '15), 2015.
+9. J. Wang, W. Wang, J. Li, R. Wang, and Z. Lin, "A comprehensive survey on approximate nearest neighbor search," ACM Computing Surveys (CSUR), Vol. 54, No. 6, pp. 1-39, 2021.
+10. M. Yin, D. Wang, C. Li, Z. Wang, Y. Wang, Z. Liu, H. Liu, J. Wang, T. Wang, J. Lou, W. Dou, and Y. Li, "A Survey on LLM-based Autonomous Agents," arXiv preprint arXiv:2308.11432, 2023.
+11. S. Newman, Building Microservices: Designing Fine-Grained Systems, O'Reilly Media, Inc., 2015.
+12. The Kubernetes Authors, "Objects In Kubernetes," [Online]. Available: https://kubernetes.io/ko/docs/concepts/overview/working-with-objects/ (downloaded 2025, Sep. 17)
+13. P. Liu, W. Yuan, J. Fu, Z. Jiang, H. Hayashi, and G. Neubig, "Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing," ACM Computing Surveys, Vol. 55, No. 9, pp. 1-35, 2023.
+14. D. Kim, D. Yun, J. Park, and K. Yeom, "A Script Generation Method for Microservice Deployment in a Container Orchestration Environment," Journal of KIISE, Vol. 46, No. 7, pp. 682-689, 2019.

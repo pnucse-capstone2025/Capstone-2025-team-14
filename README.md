@@ -292,20 +292,65 @@ flowchart LR
 - 최종 단계에서는 핵심 데이터와 동적 운영 정보를 명확히 정의하고, 텍스트 이상의 운영 적용 결과물 및 검증 방법(실험 설계·지표)을 제시할 것.
 
 
-반영 사항/계획
-- 사용자군을 초급/중급/고급 등 숙련도 기준으로 세분화하고 문제정의에 반영.
-- 동적 운영 정보의 스키마/수집원(예: Prometheus, ELK)/갱신주기를 정의하고 README 및 설계서에 명시.
+> 반영 사항/계획
+
+- 사용자군을 초급/중급/고급 등 숙련도 기준으로 세분화하고 문제정의에 반영
+- 동적 운영 정보의 스키마/수집원/갱신주기를 정의하고 설계서에 명시.
 - 클래스 다이어그램에 책임/의존 방향을 보강하고, 핵심 모듈 간 인터페이스 명세 추가.
-- “RAG 기반 응답 생성” 시퀀스 다이어그램을 상세화(질의→리트리버→재랭킹→컨텍스트 구성→프롬프트→생성→근거출력).
-- 최종 산출물로 배포 템플릿/파라미터 추천안/운영 체크리스트를 제시하고, 검증 지표(배포 성공률, MTTR, 비용절감률 등)와 실험 시나리오를 함께 공개.
+- “RAG 기반 응답 생성” 시퀀스 다이어그램 상세화(질의→리트리버→재랭킹→컨텍스트 구성→프롬프트→생성→근거출력).
+- 최종 산출물로 배포 템플릿/파라미터 추천안/운영 체크리스트를 제시하고, 검증 지표(배포 성공률, MTTR, 비용절감률 등)와 실험 시나리오를 함께 제시
 
 
 ### 5. 설치 및 실행 방법
->
 #### 5.1. 설치절차 및 실행 방법
-> 설치 명령어 및 준비 사항, 실행 명령어, 포트 정보 등
+> Docker 및 Git 사전 설치가 필요합니다.
+- git clone
+```bash
+git clone https://github.com/pnucse-capstone2025/Capstone-2025-team-14.git 
+```
+- .env 파일 생성
+  - 설치 환경에서 사용할 변수를 다음 경로에 .env 파일로 저장합니다.
+> rag_server/.env
+```.env
+OPENAI_API_KEY=""
+ELASTICSEARCH_URL=""
+
+# LangSmith 
+LANGSMITH_TRACING=""
+LANGSMITH_ENDPOINT=""
+LANGSMITH_API_KEY=""
+LANGSMITH_PROJECT=""
+```
+
+> triton_dashboard/.env
+```.env
+DB_URL=""
+DB_USERNAME=""
+DB_PASSWORD=""
+
+JWT_SECRET=""
+JWT_TOKEN_TIMEOUT_SEC=""
+JWT_REFRESH_TOKEN_TIMEOUT_SEC=""
+
+RAG_SERVICE_URL=""
+
+ELASTICSEARCH_HOST=""
+ELASTICSEARCH_PORT=""
+
+API_KEY_ENCRYPTION_PASSWORD=""
+API_KEY_ENCRYPTION_SALT=""
+```
+
+- docker-compose 실행
+```bash
+docker-compose up -d --build
+```
+
+
 #### 5.2. 오류 발생 시 해결 방법
-> 선택 사항, 자주 발생하는 오류 및 해결책 등
+
+- JWT Secret 키 관련 오류 시 키 길이가 64자 이상인지 체크해야 합니다. 
+- Elasticsearch 접속 오류 발생 시 유효한 환경변수인지 점검해야 합니다.
 
 ### 6. 소개 자료 및 시연 영상
 #### 6.1. 프로젝트 소개 자료
@@ -319,8 +364,9 @@ flowchart LR
 #### 7.1. 팀원별 소개 및 역할 분담
 
 - 김휘수, whisu20000@pusan.ac.kr
-  - . 
-  - .
+  - RAG 파이프라인 구축
+  - LangSmith를 활용한 체인 실행 흐름 모니터링 및 디버깅
+  - RAG 서버 구축
 - 신세환, sk124590@gmail.com 
   - 실시간 웹 터미널 구현
   - 로그 수집기 배포 기능 개발
@@ -328,9 +374,10 @@ flowchart LR
   - 서비스 모니터링 기능 개발
   - 테스트용 MSA 애플리케이션 개발
 - 설종환
-  - .
-  - .
-  - .
+  - RAG 채팅 클라이언트 및 채팅 이력 관리 기능 개발
+  - 조직 내부 데이터 저장 및 삭제 구현
+  - 테스트용 MSA 애플리케이션 개발
+  - 정량 평가 연구 진행
 
 ### 8. 참고 문헌 및 출처
 

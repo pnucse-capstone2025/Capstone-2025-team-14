@@ -47,6 +47,20 @@ RAG(Retrieval-Augmented Generation) 기술을 활용해서 컨테이너 기반 �
 
 ![시스템 구성도](/docs/04.기술문서/시스템구성도.png)
 
+#### 3.2. 사용 기술
+| 구분 | 기술 스택 |
+| :--- | :--- |
+| **소프트웨어 형상관리 (SCM)** | Github |
+| **컨테이너 기술** | Docker |
+| **컨테이너 오케스트레이션** | Kubernetes |
+| **Back-end** | Spring Boot (3.5.3), Flask (3.1.1), Java (21), Python (3.11) |
+| **Front-end** | HTML, CSS, JavaScript, Thymeleaf |
+| **RAG** | LangChain (0.3.27) |
+| **로그 수집** | Elasticsearch (8.13.4), Logstash (7.17.9), Filebeat (7.17.9), Metricbeat (7.17.9) |
+
+### 4. 개발 결과
+#### 4.1. 전체 시스템 흐름도
+
 - 조직 내부 데이터를 활용한 배포 명세 생성 과정
 
 ```mermaid
@@ -55,8 +69,8 @@ config:
   theme: neutral
   layout: dagre
 ---
-graph TD%%{init: {'themeVariables': { 'fontSize': '24px' }}}%%
-    subgraph "<b>조직 내부 데이터 (Input)</b>"
+graph TD%%{init: {'themeVariables': { 'fontSize': '20px' }}}%%
+    subgraph "<b>조직 내부 데이터</b>"
         A["<b>애플리케이션 정보</b><br/>- 서비스 이름<br/>- 포트<br/>- 서비스 의존성"]
         B["<b>마이크로서비스<br>정보</b><br/>- 이미지<br/>- 환경변수<br/>- 인스턴스 수"]
         C["<b>내부 운영 정책</b><br/>- 리소스 할당<br/>- 레이블 규칙<br/>- 보안 정책 <br/>- 주요 에러 및<br>대응"]
@@ -224,19 +238,6 @@ flowchart LR
 
 ```
 
-#### 3.2. 사용 기술
-| 구분 | 기술 스택 |
-| :--- | :--- |
-| **소프트웨어 형상관리 (SCM)** | Github |
-| **컨테이너 기술** | Docker |
-| **컨테이너 오케스트레이션** | Kubernetes |
-| **Back-end** | Spring Boot (3.5.3), Flask (3.1.1), Java (21), Python (3.11) |
-| **Front-end** | HTML, CSS, JavaScript, Thymeleaf |
-| **RAG** | LangChain (0.3.27) |
-| **로그 수집** | Elasticsearch (8.13.4), Logstash (7.17.9), Filebeat (7.17.9), Metricbeat (7.17.9) |
-
-### 4. 개발 결과
-#### 4.1. 전체 시스템 흐름도
 사용자는 시스템에 로그인하여 프로젝트를 생성하고, 해당 프로젝트에 조직 내부 데이터를 업로드합니다. 업로드된 문서는 Flask 서버에서 벡터화하여 Elasticsearch에 저장됩니다. 그 후 사용자는 채팅 인터페이스를 통해 자연어로 배포 명세 생성을 요청할 수 있습니다.
 
 **RAG 기반 배포 명세 생성 흐름**:
@@ -373,7 +374,7 @@ docker-compose up -d --build
   - 조직 내부 데이터 정의
   - 서비스 모니터링 기능 개발
   - 테스트용 MSA 애플리케이션 개발
-- 설종환
+- 설종환, sul107485@gmail.com
   - RAG 채팅 클라이언트 및 채팅 이력 관리 기능 개발
   - 조직 내부 데이터 저장 및 삭제 구현
   - 테스트용 MSA 애플리케이션 개발
